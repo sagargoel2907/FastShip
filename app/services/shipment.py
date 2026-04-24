@@ -4,7 +4,7 @@ from app.database.models import Shipment
 from sqlalchemy.ext.asyncio import AsyncSession
 
 class ShipmentService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession):
         self.session = session
 
     async def get(self, id: int) -> Shipment | None:

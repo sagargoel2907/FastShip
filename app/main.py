@@ -5,7 +5,7 @@ from rich import panel, print
 from scalar_fastapi import get_scalar_api_reference
 
 from .database.session import create_db_and_tables
-from .api.router import router
+from .api.router import master_router
 
 
 @asynccontextmanager
@@ -17,7 +17,7 @@ async def lifespan_handler(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan_handler)
 
-app.include_router(router=router)
+app.include_router(router=master_router)
 
 @app.get('/scalar-docs', include_in_schema=False)
 def get_scalar_docs():
