@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 
 from app.database.models import Seller
+from app.database.redis import is_jti_blacklisted
 from app.database.session import get_session
 from app.services.seller import SellerService
 from app.services.shipment import ShipmentService
@@ -24,9 +25,9 @@ def get_seller_service(session: SessionDep):
 ShipmentServiceDep = Annotated[ShipmentService, Depends(get_shipment_service)]
 SellerServiceDep = Annotated[SellerService, Depends(get_seller_service)]
 
-def get_access_token_data(token: str = Depends(oauth_scheme)):
+async def get_access_token_data(token: str = Depends(oauth_scheme)):
     data = decode_jwt_token(token)
-    if not data:
+    if not data or await is_jti_blacklisted(data['jti']):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid or expired JWT Token')
     return data
 
