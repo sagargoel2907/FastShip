@@ -1,4 +1,5 @@
 from datetime import timedelta
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from pydantic import EmailStr
@@ -27,7 +28,7 @@ class SellerService:
         await self.session.refresh(db_seller)
         return db_seller
 
-    async def get(self, id: int) -> Seller | None:
+    async def get(self, id: UUID) -> Seller | None:
         return await self.session.get(Seller, id)
 
     async def get_access_token(self, email: EmailStr, password: str) -> str:
@@ -41,7 +42,7 @@ class SellerService:
         token = generate_jwt_token(data={
             'user':{
                 'name': seller.name,
-                'id': seller.id,
+                'id': str(seller.id),
             }
         }, expiry=timedelta(hours=2))
 

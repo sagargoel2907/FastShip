@@ -21,7 +21,6 @@ def generate_jwt_token(data: dict, expiry: timedelta = timedelta(days=1)):
 
 def decode_jwt_token(token: str) -> dict | None:
     try:
-        print(token)
         return jwt.decode(token, key=security_settings.JWT_SECRET, algorithms=[security_settings.JWT_ALGORITHM])
     except jwt.PyJWTError:
         return None

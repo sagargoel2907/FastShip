@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
@@ -22,7 +23,7 @@ async def dashboard(seller: SellerDep):
 
 
 @router.get("/{id}", response_model=SellerRead)
-async def get_seller(id: int, service: SellerServiceDep):
+async def get_seller(id: UUID, service: SellerServiceDep):
     return await service.get(id)
 
 

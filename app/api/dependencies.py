@@ -1,5 +1,6 @@
 
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 
@@ -32,6 +33,6 @@ async def get_access_token_data(token: str = Depends(oauth_scheme)):
     return data
 
 async def get_current_seller(session: SessionDep, data: dict = Depends(get_access_token_data)):
-    return await session.get(Seller, data['user']['id'])
+    return await session.get(Seller, UUID(data['user']['id']))
 
 SellerDep = Annotated[Seller, Depends(get_current_seller)]
