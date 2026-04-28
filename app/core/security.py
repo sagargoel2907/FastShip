@@ -5,7 +5,8 @@ import jwt
 from app.config import security_settings
 from uuid import uuid4
 
-oauth_scheme = OAuth2PasswordBearer(tokenUrl="/seller/token")
+oauth_scheme_seller = OAuth2PasswordBearer(tokenUrl="/seller/token")
+oauth_scheme_delivery_partner = OAuth2PasswordBearer(tokenUrl="/delivery-partner/token")
 
 
 def generate_jwt_token(data: dict, expiry: timedelta = timedelta(days=1)):

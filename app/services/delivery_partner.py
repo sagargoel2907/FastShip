@@ -1,0 +1,61 @@
+from typing import Sequence
+from uuid import UUID
+
+from fastapi import HTTPException, status
+from passlib.context import CryptContext
+from pydantic import EmailStr
+from sqlalchemy import any_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.schemas.delivery_partner import DeliveryPartnerCreate
+from app.database.models import DeliveryPartner, Shipment
+from app.services.user import UserService
+
+password_context = CryptContext(schemes=["argon2"], deprecated="auto")
+
+
+class DeliveryPartnerService(UserService[DeliveryPartner]):
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session, DeliveryPartner)
+
+    async def create(self, delivery_partner: DeliveryPartnerCreate) -> DeliveryPartner:
+        db_partner = DeliveryPartner(
+            **delivery_partner.model_dump(exclude=set(["password"])),
+            password_hash=password_context.hash(delivery_partner.password),
+        )
+        return await self._create(db_partner)
+
+    async def get(self, id: UUID) -> DeliveryPartner | None:
+        return await self._get(id)
+
+    async def get_access_token(self, email: EmailStr, password: str) -> str:
+        return await self._get_access_token(email, password)
+
+    async def get_all_delivery_partner(self) -> Sequence[DeliveryPartner]:
+        return await self._get_all()
+
+    async def update(self, delivery_partner: DeliveryPartner) -> DeliveryPartner:
+        return await self._update(delivery_partner)
+
+    async def get_available_partner_for_zipcode(
+        self, zipcode: int
+    ) -> Sequence[DeliveryPartner]:
+        result = await self.session.scalars(
+            select(DeliveryPartner).where(
+                zipcode == any_(DeliveryPartner.serviceable_zip_codes)
+            )
+        )
+        return result.all()
+
+    async def assign_shipment(self, shipment: Shipment):
+        eligible_partners = await self.get_available_partner_for_zipcode(shipment.zipcode)
+        for partner in eligible_partners:
+            if partner.current_handling_capacity > 0:
+                shipment.delivery_partner = partner
+                await self.session.commit()
+                return partner
+
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            detail="No delivery partner available!",
+        )

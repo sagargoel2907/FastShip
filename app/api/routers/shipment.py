@@ -40,3 +40,7 @@ async def update_shipment(shipment: ShipmentUpdate, id: UUID, service: ShipmentS
 async def delete_shipment(id: UUID, service: ShipmentServiceDep):
     await service.delete(id)
     return {"detail": f"Shipment having id #{id} has been deleted"}
+
+@router.get('/', response_model=list[ShipmentRead])
+async def get_all_shipments(service: ShipmentServiceDep):
+    return await service.get_all_shipments()
