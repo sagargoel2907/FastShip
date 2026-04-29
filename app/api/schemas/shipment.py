@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.schemas.seller import SellerRead
-from app.database.models import Seller, ShipmentStatus
+from app.database.models import ShipmentStatus
 
 class BaseShipment(BaseModel):
     content: str

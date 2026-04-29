@@ -5,7 +5,7 @@ from pydantic import EmailStr
 from sqlalchemy import select
 
 from app.core.security import generate_jwt_token
-from app.database.models import DeliveryPartner, Seller, User
+from app.database.models import DeliveryPartner, Seller
 from app.services.base import BaseService
 
 from typing import TypeVar

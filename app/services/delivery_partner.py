@@ -51,8 +51,6 @@ class DeliveryPartnerService(UserService[DeliveryPartner]):
         eligible_partners = await self.get_available_partner_for_zipcode(shipment.zipcode)
         for partner in eligible_partners:
             if partner.current_handling_capacity > 0:
-                shipment.delivery_partner = partner
-                await self.session.commit()
                 return partner
 
         raise HTTPException(
