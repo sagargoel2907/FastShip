@@ -35,3 +35,6 @@ class BaseService(Generic[ModelT]):
     async def _get_all(self) -> Sequence[ModelT]:
         result = await self.session.scalars(select(self.model))
         return result.all()
+    
+    async def _refresh(self, entity: ModelT):
+        await self.session.refresh(entity)

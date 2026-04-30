@@ -8,6 +8,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy import ARRAY, INTEGER
 
 
+
 class ShipmentStatus(str, Enum):
     placed = "placed"
     in_transit = "in_transit"
@@ -36,7 +37,6 @@ class Shipment(SQLModel, table=True):
     source: str
     destination: str
     zipcode: int
-    status: ShipmentStatus = Field(default=ShipmentStatus.placed)
     estimated_delivery: datetime = Field(
         default_factory=lambda: datetime.now() + timedelta(3)
     )
@@ -52,10 +52,23 @@ class Shipment(SQLModel, table=True):
         sa_relationship_kwargs={"lazy": "selectin"},
     )
 
+    timeline: list["ShipmentEvent"] = Relationship(
+        back_populates="shipment",
+        sa_relationship_kwargs={
+            "lazy": "selectin",
+        },
+    )
+
+    @property
+    def status(self) -> ShipmentStatus:
+        from rich import panel, print
+        print(self.timeline)
+        return max(self.timeline, key=lambda event: event.created_at).status
+
 
 class User(SQLModel):
     name: str = Field(max_length=20)
-    email: EmailStr
+    email: EmailStr = Field()
     password_hash: str
 
 
@@ -74,6 +87,9 @@ class Seller(User, table=True):
             default=datetime.now,
         )
     )
+
+    address: str | None = Field(default=None)
+    zipcode: int | None = Field(default=None)
 
     shipments: list[Shipment] = Relationship(
         back_populates="seller",
@@ -109,8 +125,40 @@ class DeliveryPartner(User, table=True):
 
     @property
     def active_shipments(self):
-        return [shipment for shipment in self.shipments if shipment.status != ShipmentStatus.delivered]
-    
+        return [
+            shipment
+            for shipment in self.shipments
+            if shipment.status != ShipmentStatus.delivered
+        ]
+
     @property
     def current_handling_capacity(self):
         return self.max_handling_capacity - len(self.active_shipments)
+
+
+class ShipmentEvent(SQLModel, table=True):
+    __tablename__ = "shipment_event" # type: ignore
+    
+    id: UUID = Field(
+        sa_column=Column(
+            postgresql.UUID,
+            default=uuid4,
+            primary_key=True,
+        )
+    )
+    created_at: datetime = Field(
+        sa_column=Column(
+            postgresql.TIMESTAMP,
+            default=datetime.now,
+        )
+    )
+
+    location: int
+    status: ShipmentStatus
+    description: str | None = Field(default=None)
+
+    shipment_id: UUID = Field(foreign_key="shipment.id")
+    shipment: Shipment = Relationship(
+        back_populates="timeline",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )

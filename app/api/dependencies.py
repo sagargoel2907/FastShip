@@ -16,13 +16,14 @@ from app.core.security import (
     oauth_scheme_seller,
     oauth_scheme_delivery_partner,
 )
+from app.services.shipment_event import ShipmentEventService
 
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 def get_shipment_service(session: SessionDep):
-    yield ShipmentService(session, DeliveryPartnerService(session))
+    yield ShipmentService(session, DeliveryPartnerService(session), ShipmentEventService(session))
 
 
 def get_seller_service(session: SessionDep):
