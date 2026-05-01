@@ -3,7 +3,11 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 
 
-from ..dependencies import DeliveryPartnerDep, SellerDep, ShipmentServiceDep
+from ..dependencies import (
+    DeliveryPartnerDep,
+    SellerDep,
+    ShipmentServiceDep,
+)
 from ..schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
 
 router = APIRouter(prefix="/shipment", tags=["Shipment"], dependencies=[])  # type: ignore
@@ -47,13 +51,14 @@ async def update_shipment(
     return db_shipment
 
 
-@router.delete("/{id}")
-async def delete_shipment(
+@router.post("/cancel/{id}", response_model=ShipmentRead)
+async def cancel_shipment(
     id: UUID,
     service: ShipmentServiceDep,
+    seller: SellerDep,
 ):
-    await service.delete(id)
-    return {"detail": f"Shipment having id #{id} has been deleted"}
+    return await service.cancel(id, seller)
+
 
 
 @router.get("/", response_model=list[ShipmentRead])

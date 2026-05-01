@@ -80,11 +80,21 @@ class ShipmentService(BaseService[Shipment]):
             )
         return await self._update(db_shipment)
 
-    async def delete(
-        self,
-        id: UUID,
-    ) -> None:
-        await self._delete(id)
+    async def cancel(self, id: UUID, seller: Seller) -> Shipment:
+        shipment = await self.get(id)
+        if not shipment or shipment.seller_id != seller.id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Shipment does not exist or seller mismatch",
+            )
+
+        event = await self.shipment_event_service.create(
+            shipment=shipment,
+            status=ShipmentStatus.cancelled,
+        )
+
+        shipment.timeline.append(event)
+        return shipment
 
     async def get_all_shipments(
         self,

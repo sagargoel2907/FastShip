@@ -4,7 +4,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.api.schemas.seller import SellerRead
-from app.database.models import ShipmentEvent, ShipmentStatus
+from app.api.schemas.shipment_event import ShipmentEventRead
+from app.database.models import ShipmentStatus
 
 class BaseShipment(BaseModel):
     content: str
@@ -18,7 +19,7 @@ class ShipmentCreate(BaseShipment):
 
 class ShipmentRead(BaseShipment):
     id: UUID
-    timeline: list[ShipmentEvent]
+    timeline: list[ShipmentEventRead]
     estimated_delivery: datetime
     seller: SellerRead
 

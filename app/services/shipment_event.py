@@ -2,7 +2,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import Shipment, ShipmentEvent, ShipmentStatus
 from app.services.base import BaseService
-from rich import panel, print
 
 
 class ShipmentEventService(BaseService):
@@ -44,5 +43,7 @@ class ShipmentEventService(BaseService):
                 return "shipment out for delivery"
             case ShipmentStatus.delivered:
                 return "successfully delivered"
+            case ShipmentStatus.cancelled:
+                return "shipment cancelled by seller"
             case _:
                 return f"scanned at {location}"

@@ -8,12 +8,12 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy import ARRAY, INTEGER
 
 
-
 class ShipmentStatus(str, Enum):
     placed = "placed"
     in_transit = "in_transit"
     out_for_delivery = "out_for_delivery"
     delivered = "delivered"
+    cancelled = "cancelled"
 
 
 class Shipment(SQLModel, table=True):
@@ -61,8 +61,6 @@ class Shipment(SQLModel, table=True):
 
     @property
     def status(self) -> ShipmentStatus:
-        from rich import panel, print
-        print(self.timeline)
         return max(self.timeline, key=lambda event: event.created_at).status
 
 
@@ -137,8 +135,8 @@ class DeliveryPartner(User, table=True):
 
 
 class ShipmentEvent(SQLModel, table=True):
-    __tablename__ = "shipment_event" # type: ignore
-    
+    __tablename__ = "shipment_event"  # type: ignore
+
     id: UUID = Field(
         sa_column=Column(
             postgresql.UUID,
