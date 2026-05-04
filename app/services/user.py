@@ -32,6 +32,12 @@ class UserService(BaseService[UserT]):
         super().__init__(session, model)
         self.notification_service = NotificationService(tasks=tasks)
 
+    async def _get_user_by_email(self, email: EmailStr):
+        user = await self.session.scalar(
+            select(self.model).where(self.model.email == email)
+        )
+        return user
+
     async def _get_access_token(self, email: EmailStr, password: str) -> str:
         user = await self.session.scalar(
             select(self.model).where(self.model.email == email)
@@ -71,7 +77,7 @@ class UserService(BaseService[UserT]):
         return user
 
     async def verify_user_email_with_token(self, token: str):
-        token_data = decode_url_safe_token(token=token)
+        token_data = decode_url_safe_token(token=token, expiry=timedelta(days=1))
         if not token_data:
             raise HTTPException(
                 detail="Invalid token", status_code=status.HTTP_400_BAD_REQUEST
@@ -83,3 +89,33 @@ class UserService(BaseService[UserT]):
             )
         user.email_verified = True
         await self._update(user)
+
+    async def send_password_reset_email(self, email: EmailStr, router_prefix: str):
+        user = await self._get_user_by_email(email)
+        if not user:
+            return
+        token = generate_url_safe_token(
+            {"email": user.email, "id": str(user.id)}, salt="forgot-password"
+        )
+        await self.notification_service.send_email_with_template(
+            recipients=[email],
+            subject="FastShip Account Password reset",
+            context={
+                "username": user.name,
+                "reset_password_link": f"http://{app_settings.APP_DOMAIN}{router_prefix}/reset-password-form?token={token}",
+            },
+            template_name="forgot_password.html",
+        )
+
+    async def reset_password(self, token: str, password: str):
+        token_data = decode_url_safe_token(
+            token, expiry=timedelta(days=1), salt="forgot-password"
+        )
+        if not token_data:
+            return False
+        user = await self._get(UUID(token_data["id"]))
+        if not user:
+            return False
+        user.password_hash = password_context.hash(password)
+        await self._update(user)
+        return True

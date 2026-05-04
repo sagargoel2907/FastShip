@@ -28,11 +28,11 @@ def decode_jwt_access_token(token: str) -> dict | None:
     except jwt.PyJWTError:
         return None
     
-def generate_url_safe_token(data:dict) -> str:
-    return serializer.dumps(obj=data)
+def generate_url_safe_token(data:dict, salt: str | None = None) -> str:
+    return serializer.dumps(obj=data, salt=salt)
 
-def decode_url_safe_token(token: str) -> dict | None:
+def decode_url_safe_token(token: str, expiry: timedelta | None = None, salt: str | None = None) -> dict | None:
     try:
-        return serializer.loads(token, max_age=int(timedelta(days=1).total_seconds()))
+        return serializer.loads(token, max_age=int(expiry.total_seconds()) if expiry else None, salt=salt)
     except (BadSignature, SignatureExpired):
         return None
