@@ -1,6 +1,11 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
+from fastapi.templating import Jinja2Templates
+
+from app.config import TEMPLATES_FOLDER
+
+templates = Jinja2Templates(directory=TEMPLATES_FOLDER)
 
 
 from ..dependencies import (
@@ -60,9 +65,27 @@ async def cancel_shipment(
     return await service.cancel(id, seller)
 
 
-
 @router.get("/", response_model=list[ShipmentRead])
 async def get_all_shipments(
     service: ShipmentServiceDep,
 ):
     return await service.get_all_shipments()
+
+
+@router.get("/track/{id}")
+async def track_shipment_page(request: Request, id: UUID, service: ShipmentServiceDep):
+    shipment = await service.get(id)
+    if not shipment:
+        return templates.TemplateResponse(
+            request=request, name="shipment_not_found.html"
+        )
+    context = {
+        "shipment": shipment.model_dump(),
+        "seller": shipment.seller.name,
+        "delivery_partner": shipment.delivery_partner.name,
+        "timeline": shipment.timeline,
+        "status": shipment.status,
+    }
+    return templates.TemplateResponse(
+        request=request, name="shipment_track.html", context=context
+    )

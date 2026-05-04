@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Out for Delivery</title>
+</head>
+<body style="font-family: Arial, sans-serif; color:#333;">
+  <h2>Your Order Is Out for Delivery 🚚</h2>
+  <p>Hi <strong>{{customer}}</strong>,</p>
+
+  <p>Your order <strong>#{{shipment.id}}</strong> is out for delivery.</p>
+
+  <p>
+    📦 <strong>Expected Delivery:</strong> {{shipment.estimated_delivery}}<br>
+    📞 <strong>Delivery Partner:</strong> {{delivery_partner}}
+  </p>
+
+  <p>Please keep your phone accessible for delivery.</p>
+
+  <p>Thank you,<br>
+  <strong>FastShip</strong></p>
+</body>
+</html>

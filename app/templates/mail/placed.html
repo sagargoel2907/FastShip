@@ -1,0 +1,24 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Order Confirmed</title>
+</head>
+<body style="font-family: Arial, sans-serif; color:#333;">
+  <h2>Order Confirmed 🎉</h2>
+  <p>Hi <strong>{{customer}}</strong>,</p>
+
+  <p>Thank you for your order! Your order <strong>#{{shipment.id}}</strong> was successfully placed on <strong>{{shipment.created_at}}</strong>.</p>
+
+  <p>
+    📦 <strong>Expected Delivery:</strong> {{shipment.estimated_delivery}}<br>
+    📞 <strong>Delivery Partner:</strong> {{delivery_partner_name}} ({{delivery_partner_phone}})
+  </p>
+
+  <p>We’ll notify you once your order is shipped.</p>
+
+  <p>Thanks for choosing us,<br>
+  <strong>FastShip</strong></p>
+</body>
+</html>

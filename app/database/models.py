@@ -59,6 +59,9 @@ class Shipment(SQLModel, table=True):
         },
     )
 
+    client_contact_email: EmailStr
+    client_contact_phone: str | None
+
     @property
     def status(self) -> ShipmentStatus:
         return max(self.timeline, key=lambda event: event.created_at).status

@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from app.api.schemas.seller import SellerRead
 from app.api.schemas.shipment_event import ShipmentEventRead
@@ -13,6 +13,8 @@ class BaseShipment(BaseModel):
     source: str
     destination: str
     zipcode: int
+    client_contact_email: EmailStr
+    client_contact_phone: str | None = Field(default=None)
 
 class ShipmentCreate(BaseShipment):
     pass

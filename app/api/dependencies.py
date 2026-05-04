@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import BackgroundTasks, Depends, HTTPException, status
 
 from app.database.models import Seller, DeliveryPartner
 from app.database.redis import is_jti_blacklisted
@@ -22,12 +22,15 @@ from app.services.shipment_event import ShipmentEventService
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
-def get_shipment_service(session: SessionDep):
-    yield ShipmentService(session, DeliveryPartnerService(session), ShipmentEventService(session))
+def get_shipment_service(session: SessionDep, tasks: BackgroundTasks):
+    yield ShipmentService(
+        session, DeliveryPartnerService(session), ShipmentEventService(session, tasks)
+    )
 
 
 def get_seller_service(session: SessionDep):
     yield SellerService(session)
+
 
 def get_delivery_partner_service(session: SessionDep):
     yield DeliveryPartnerService(session)
@@ -35,7 +38,9 @@ def get_delivery_partner_service(session: SessionDep):
 
 ShipmentServiceDep = Annotated[ShipmentService, Depends(get_shipment_service)]
 SellerServiceDep = Annotated[SellerService, Depends(get_seller_service)]
-DeliveryPartnerServiceDep = Annotated[DeliveryPartnerService, Depends(get_delivery_partner_service)]
+DeliveryPartnerServiceDep = Annotated[
+    DeliveryPartnerService, Depends(get_delivery_partner_service)
+]
 
 
 async def get_access_token_data(token: str):
@@ -68,6 +73,7 @@ async def get_current_seller(
             detail="Not Authorized",
         )
     return seller
+
 
 async def get_current_delivery_partner(
     session: SessionDep, data: dict = Depends(get_seller_access_token_data)

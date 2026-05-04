@@ -1,12 +1,15 @@
+from fastapi import BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import Shipment, ShipmentEvent, ShipmentStatus
 from app.services.base import BaseService
+from app.services.notification import NotificationService
 
 
 class ShipmentEventService(BaseService):
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession, tasks: BackgroundTasks):
         super().__init__(session, ShipmentEvent)
+        self.notification_service = NotificationService(tasks)
 
     async def create(
         self,
@@ -30,6 +33,7 @@ class ShipmentEventService(BaseService):
             shipment_id=shipment.id,
         )
 
+        await self._notify(shipment, status)
         return await self._create(shipment_event)
 
     def _get_latest_event_for_shipment(self, shipment: Shipment) -> ShipmentEvent:
@@ -47,3 +51,41 @@ class ShipmentEventService(BaseService):
                 return "shipment cancelled by seller"
             case _:
                 return f"scanned at {location}"
+
+    async def _notify(self, shipment: Shipment, status: ShipmentStatus):
+        if status == ShipmentStatus.in_transit:
+            return
+
+        recepients = [shipment.client_contact_email]
+        subject: str = ''
+        context = {
+            "shipment" : shipment.model_dump(),
+            "seller" : shipment.seller.name,
+            "customer" : shipment.client_contact_email,
+            "delivery_partner" : shipment.delivery_partner.name,
+        }
+        template_name: str = ''
+
+        match status:
+            case ShipmentStatus.placed:
+                subject = "Order Confirmed 🎉"
+                template_name = 'placed.html'
+                
+            case ShipmentStatus.out_for_delivery:
+                subject = "Your Order Is Out for Delivery 🚚"
+                template_name = 'out_for_delivery.html'
+            
+            case ShipmentStatus.cancelled:
+                subject = "Order Cancelled"
+                template_name = 'cancelled.html'
+            
+            case ShipmentStatus.delivered:
+                subject = "Order Delivered ✅"
+                template_name = 'delivered.html'
+
+        await self.notification_service.send_email_with_template(
+            recipients=recepients,
+            subject=subject,
+            template_name=template_name,
+            context=context,
+        )

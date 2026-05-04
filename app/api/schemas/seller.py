@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, EmailStr
 class BaseSeller(BaseModel):
     name: str = Field(max_length=20)
     email: EmailStr
+    zipcode: int
 
 class SellerRead(BaseSeller):
     id: UUID
