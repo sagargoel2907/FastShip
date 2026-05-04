@@ -69,9 +69,9 @@ class Shipment(SQLModel, table=True):
 
 class User(SQLModel):
     name: str = Field(max_length=20)
-    email: EmailStr = Field()
+    email: EmailStr = Field(unique=True)
     password_hash: str
-
+    email_verified: bool = Field(default=False)
 
 class Seller(User, table=True):
     __tablename__ = "seller"  # type: ignore

@@ -1,7 +1,7 @@
 from typing import Sequence
 from uuid import UUID
 
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from passlib.context import CryptContext
 from pydantic import EmailStr
 from sqlalchemy import any_, select
@@ -15,15 +15,15 @@ password_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 class DeliveryPartnerService(UserService[DeliveryPartner]):
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, DeliveryPartner)
+    def __init__(self, session: AsyncSession, tasks: BackgroundTasks) -> None:
+        super().__init__(session, DeliveryPartner, tasks)
 
     async def create(self, delivery_partner: DeliveryPartnerCreate) -> DeliveryPartner:
-        db_partner = DeliveryPartner(
-            **delivery_partner.model_dump(exclude=set(["password"])),
-            password_hash=password_context.hash(delivery_partner.password),
+        db_partner = await self._create_user(
+            delivery_partner.model_dump(),
+            router_prefix='delivery-partner'
         )
-        return await self._create(db_partner)
+        return db_partner
 
     async def get(self, id: UUID) -> DeliveryPartner | None:
         return await self._get(id)
@@ -42,7 +42,7 @@ class DeliveryPartnerService(UserService[DeliveryPartner]):
     ) -> Sequence[DeliveryPartner]:
         result = await self.session.scalars(
             select(DeliveryPartner).where(
-                zipcode == any_(DeliveryPartner.serviceable_zip_codes)
+                any_(DeliveryPartner.serviceable_zip_codes) == zipcode
             )
         )
         return result.all()

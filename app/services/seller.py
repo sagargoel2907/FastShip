@@ -1,28 +1,27 @@
 from typing import Sequence
 from uuid import UUID
 
+from fastapi import BackgroundTasks
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas.seller import SellerCreate
 from app.database.models import Seller
-from passlib.context import CryptContext
 
 from app.services.user import UserService
 
-password_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 class SellerService(UserService[Seller]):
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session, Seller)
+    def __init__(self, session: AsyncSession, tasks: BackgroundTasks) -> None:
+        super().__init__(session, Seller, tasks)
 
     async def create(self, seller: SellerCreate) -> Seller:
-        db_seller = Seller(
-            **seller.model_dump(exclude=set(["password"])),
-            password_hash=password_context.hash(seller.password),
+        db_seller = await self._create_user(
+            seller.model_dump(),
+            router_prefix='seller'
         )
-        return await self._create(db_seller)
+        return db_seller
 
     async def get(self, id: UUID) -> Seller | None:
         return await self._get(id)

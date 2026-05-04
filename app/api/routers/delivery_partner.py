@@ -32,11 +32,6 @@ async def dashboard(delivery_partner: DeliveryPartnerDep):
     return delivery_partner
 
 
-@router.get("/{id}", response_model=DeliveryPartnerRead)
-async def get_delivery_partner(id: UUID, service: DeliveryPartnerServiceDep):
-    return await service.get(id)
-
-
 @router.post("/token")
 async def token(
     request_form: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -55,7 +50,7 @@ async def logout(
     return {"details": "Successfully logged out!"}
 
 
-@router.patch("/", response_model=DeliveryPartnerRead)
+@router.patch("/update", response_model=DeliveryPartnerRead)
 async def update_delivery_partner(
     delivery_partner: DeliveryPartnerUpdate,
     current_partner: DeliveryPartnerDep,
@@ -68,3 +63,14 @@ async def update_delivery_partner(
 @router.get("/", response_model=list[DeliveryPartnerRead])
 async def get_all_delivery_partner(service: DeliveryPartnerServiceDep):
     return await service.get_all_delivery_partner()
+
+
+@router.get("/verify")
+async def verify_email(token: str, service: DeliveryPartnerServiceDep):
+    await service.verify_user_email_with_token(token)
+    return {"details": "Email Verified!"}
+
+
+@router.get("/{id}", response_model=DeliveryPartnerRead)
+async def get_delivery_partner(id: UUID, service: DeliveryPartnerServiceDep):
+    return await service.get(id)

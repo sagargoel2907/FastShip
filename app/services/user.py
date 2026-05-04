@@ -1,34 +1,85 @@
 from datetime import timedelta
+from uuid import UUID
 
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from pydantic import EmailStr
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import generate_jwt_token
+from app.core.security import (
+    decode_url_safe_token,
+    generate_jwt_access_token,
+    generate_url_safe_token,
+)
 from app.database.models import DeliveryPartner, Seller
 from app.services.base import BaseService
 
 from typing import TypeVar
 from passlib.context import CryptContext
 
+from app.services.notification import NotificationService
+from app.config import app_settings
+
 password_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
-UserT = TypeVar('UserT', Seller, DeliveryPartner)
+UserT = TypeVar("UserT", Seller, DeliveryPartner)
+
 
 class UserService(BaseService[UserT]):
+    def __init__(
+        self, session: AsyncSession, model: type[UserT], tasks: BackgroundTasks
+    ):
+        super().__init__(session, model)
+        self.notification_service = NotificationService(tasks=tasks)
+
     async def _get_access_token(self, email: EmailStr, password: str) -> str:
-        user = await self.session.scalar(select(self.model).where(self.model.email == email))
+        user = await self.session.scalar(
+            select(self.model).where(self.model.email == email)
+        )
         if not user or not password_context.verify(password, user.password_hash):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Email or password is incorrect",
             )
 
-        token = generate_jwt_token(data={
-            'user':{
-                'name': user.name,
-                'id': str(user.id),
-            }
-        }, expiry=timedelta(hours=2))
+        token = generate_jwt_access_token(
+            data={
+                "user": {
+                    "name": user.name,
+                    "id": str(user.id),
+                }
+            },
+            expiry=timedelta(hours=2),
+        )
 
         return token
+
+    async def _create_user(self, data: dict, router_prefix: str) -> UserT:
+        user = self.model(**data, password_hash=password_context.hash(data["password"]))
+        await self._create(user)
+
+        token = generate_url_safe_token({"email": user.email, "id": str(user.id)})
+        await self.notification_service.send_email_with_template(
+            recipients=[user.email],
+            subject="Verify your email for FastShip",
+            template_name="verify_email.html",
+            context={
+                "username": user.name,
+                "verification_link": f"http://{app_settings.APP_DOMAIN}/{router_prefix}/verify?token={token}",
+            },
+        )
+        return user
+
+    async def verify_user_email_with_token(self, token: str):
+        token_data = decode_url_safe_token(token=token)
+        if not token_data:
+            raise HTTPException(
+                detail="Invalid token", status_code=status.HTTP_400_BAD_REQUEST
+            )
+        user = await self._get(UUID(token_data["id"]))
+        if not user:
+            raise HTTPException(
+                detail="Invalid token", status_code=status.HTTP_400_BAD_REQUEST
+            )
+        user.email_verified = True
+        await self._update(user)

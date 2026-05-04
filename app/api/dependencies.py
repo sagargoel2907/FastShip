@@ -12,7 +12,7 @@ from app.services.shipment import ShipmentService
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import (
-    decode_jwt_token,
+    decode_jwt_access_token,
     oauth_scheme_seller,
     oauth_scheme_delivery_partner,
 )
@@ -24,16 +24,16 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 def get_shipment_service(session: SessionDep, tasks: BackgroundTasks):
     yield ShipmentService(
-        session, DeliveryPartnerService(session), ShipmentEventService(session, tasks)
+        session, DeliveryPartnerService(session, tasks), ShipmentEventService(session, tasks)
     )
 
 
-def get_seller_service(session: SessionDep):
-    yield SellerService(session)
+def get_seller_service(session: SessionDep, tasks: BackgroundTasks):
+    yield SellerService(session, tasks)
 
 
-def get_delivery_partner_service(session: SessionDep):
-    yield DeliveryPartnerService(session)
+def get_delivery_partner_service(session: SessionDep, tasks: BackgroundTasks):
+    yield DeliveryPartnerService(session, tasks)
 
 
 ShipmentServiceDep = Annotated[ShipmentService, Depends(get_shipment_service)]
@@ -44,7 +44,7 @@ DeliveryPartnerServiceDep = Annotated[
 
 
 async def get_access_token_data(token: str):
-    data = decode_jwt_token(token)
+    data = decode_jwt_access_token(token)
     if not data or await is_jti_blacklisted(data["jti"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -72,6 +72,11 @@ async def get_current_seller(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not Authorized",
         )
+    if not seller.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email not verified",
+        )
     return seller
 
 
@@ -83,6 +88,11 @@ async def get_current_delivery_partner(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not Authorized",
+        )
+    if not delivery_partner.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email not verified",
         )
     return delivery_partner
 

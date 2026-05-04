@@ -35,7 +35,7 @@ def upgrade() -> None:
     sa.Column('weight', sa.Float(), nullable=False),
     sa.Column('source', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('destination', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('status', sa.Enum('placed', 'in_transit', 'out_for_delivery', 'delivered', name='shipmentstatus'), nullable=False),
+    sa.Column('status', sa.Enum('placed', 'in_transit', 'out_for_delivery', 'delivered', 'cancelled', name='shipmentstatus'), nullable=False),
     sa.Column('estimated_delivery', sa.DateTime(), nullable=False),
     sa.Column('seller_id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['seller_id'], ['seller.id'], ),

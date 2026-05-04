@@ -47,7 +47,13 @@ class NotificationSettings(BaseSettings):
     USE_CREDENTIALS: bool = True
     VALIDATE_CERTS: bool = True
 
+class AppSettings(BaseSettings):
+    APP_NAME: str
+    APP_DOMAIN: str
 
+    model_config = _model_config
+
+app_settings = AppSettings()  # type: ignore
 db_settings = DatabaseSettings()  # type: ignore
 security_settings = SecuritySettings()  # type: ignore
 notification_settings = NotificationSettings()  # type: ignore

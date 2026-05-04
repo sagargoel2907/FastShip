@@ -22,11 +22,6 @@ async def dashboard(seller: SellerDep):
     return seller
 
 
-@router.get("/{id}", response_model=SellerRead)
-async def get_seller(id: UUID, service: SellerServiceDep):
-    return await service.get(id)
-
-
 @router.post("/token")
 async def token(
     request_form: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -36,13 +31,23 @@ async def token(
 
     return {"access_token": token, "type": "jwt"}
 
-@router.post('/logout')
-async def logout(token_data: Annotated[dict, Depends(get_seller_access_token_data)]):
-    await add_jti_to_blacklist(token_data['jti'])
-    return {
-        'details': 'Successfully logged out!'
-    }
 
-@router.get('/', response_model=list[SellerRead])
+@router.post("/logout")
+async def logout(token_data: Annotated[dict, Depends(get_seller_access_token_data)]):
+    await add_jti_to_blacklist(token_data["jti"])
+    return {"details": "Successfully logged out!"}
+
+
+@router.get("/", response_model=list[SellerRead])
 async def get_all_sellers(service: SellerServiceDep):
     return await service.get_all_sellers()
+
+
+@router.get("/verify")
+async def verify_email(token: str, service: SellerServiceDep):
+    await service.verify_user_email_with_token(token)
+    return {"details": 'Email Verified!'}
+
+@router.get("/{id}", response_model=SellerRead)
+async def get_seller(id: UUID, service: SellerServiceDep):
+    return await service.get(id)
