@@ -1,12 +1,11 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Form, HTTPException, Request, status
 from fastapi.templating import Jinja2Templates
 
-from app.config import TEMPLATES_FOLDER
-
-templates = Jinja2Templates(directory=TEMPLATES_FOLDER)
-
+from app.api.schemas.shipment_review import ShipmentReviewCreate
+from app.config import TEMPLATES_FOLDER, app_settings
 
 from ..dependencies import (
     DeliveryPartnerDep,
@@ -15,20 +14,11 @@ from ..dependencies import (
 )
 from ..schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
 
+templates = Jinja2Templates(directory=TEMPLATES_FOLDER)
+
 router = APIRouter(prefix="/shipment", tags=["Shipment"], dependencies=[])  # type: ignore
 
 
-@router.get("/{id}", response_model=ShipmentRead)
-async def get_shipment(
-    id: UUID,
-    service: ShipmentServiceDep,
-):
-    shipment = await service.get(id)
-    if not shipment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Shipment does not exists"
-        )
-    return shipment
 
 
 @router.post("/", response_model=ShipmentRead)
@@ -89,3 +79,36 @@ async def track_shipment_page(request: Request, id: UUID, service: ShipmentServi
     return templates.TemplateResponse(
         request=request, name="shipment_track.html", context=context
     )
+
+
+@router.get("/review")
+def review_form(request: Request, token: str):
+    return templates.TemplateResponse(
+        request=request,
+        name="review_form.html",
+        context={
+            "review_url": f"http://{app_settings.APP_DOMAIN}/shipment/review?token={token}"
+        },
+    )
+
+
+@router.post("/review")
+async def review(
+    token: str,
+    review: Annotated[ShipmentReviewCreate, Form()],
+    service: ShipmentServiceDep,
+):
+    await service.rate(review, token)
+    return {"details": "Review submitted"}
+
+@router.get("/{id}", response_model=ShipmentRead)
+async def get_shipment(
+    id: UUID,
+    service: ShipmentServiceDep,
+):
+    shipment = await service.get(id)
+    if not shipment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Shipment does not exists"
+        )
+    return shipment

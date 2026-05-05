@@ -1,9 +1,14 @@
+from random import randint
+
 from fastapi import BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import generate_url_safe_token
 from app.database.models import Shipment, ShipmentEvent, ShipmentStatus
+from app.database.redis import add_verification_code
 from app.services.base import BaseService
 from app.services.notification import NotificationService
+from app.config import app_settings
 
 
 class ShipmentEventService(BaseService):
@@ -57,31 +62,38 @@ class ShipmentEventService(BaseService):
             return
 
         recepients = [shipment.client_contact_email]
-        subject: str = ''
+        subject: str = ""
         context = {
-            "shipment" : shipment.model_dump(),
-            "seller" : shipment.seller.name,
-            "customer" : shipment.client_contact_email,
-            "delivery_partner" : shipment.delivery_partner.name,
+            "shipment": shipment.model_dump(),
+            "seller": shipment.seller.name,
+            "customer": shipment.client_contact_email,
+            "delivery_partner": shipment.delivery_partner.name,
         }
-        template_name: str = ''
+        template_name: str = ""
 
         match status:
             case ShipmentStatus.placed:
                 subject = "Order Confirmed 🎉"
-                template_name = 'placed.html'
-                
+                template_name = "placed.html"
+
             case ShipmentStatus.out_for_delivery:
                 subject = "Your Order Is Out for Delivery 🚚"
-                template_name = 'out_for_delivery.html'
-            
+                template_name = "out_for_delivery.html"
+                code = randint(100_000, 999_999)
+                context["verification_code"] = str(code)
+                await add_verification_code(shipment.id, code)
+
             case ShipmentStatus.cancelled:
                 subject = "Order Cancelled"
-                template_name = 'cancelled.html'
-            
+                template_name = "cancelled.html"
+
             case ShipmentStatus.delivered:
                 subject = "Order Delivered ✅"
-                template_name = 'delivered.html'
+                template_name = "delivered.html"
+                token = generate_url_safe_token({"id": str(shipment.id)})
+                context["review_url"] = (
+                    f"http://{app_settings.APP_DOMAIN}/shipment/review?token={token}"
+                )
 
         await self.notification_service.send_email_with_template(
             recipients=recepients,

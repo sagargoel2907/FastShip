@@ -62,6 +62,11 @@ class Shipment(SQLModel, table=True):
     client_contact_email: EmailStr
     client_contact_phone: str | None
 
+    review: "ShipmentReview" = Relationship(
+        back_populates="shipment",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
+
     @property
     def status(self) -> ShipmentStatus:
         return max(self.timeline, key=lambda event: event.created_at).status
@@ -72,6 +77,7 @@ class User(SQLModel):
     email: EmailStr = Field(unique=True)
     password_hash: str
     email_verified: bool = Field(default=False)
+
 
 class Seller(User, table=True):
     __tablename__ = "seller"  # type: ignore
@@ -161,5 +167,31 @@ class ShipmentEvent(SQLModel, table=True):
     shipment_id: UUID = Field(foreign_key="shipment.id")
     shipment: Shipment = Relationship(
         back_populates="timeline",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
+
+
+class ShipmentReview(SQLModel, table=True):
+    __tablename__ = 'shipment_review' # type: ignore
+    id: UUID = Field(
+        sa_column=Column(
+            postgresql.UUID,
+            default=uuid4,
+            primary_key=True,
+        )
+    )
+    created_at: datetime = Field(
+        sa_column=Column(
+            postgresql.TIMESTAMP,
+            default=datetime.now,
+        )
+    )
+
+    rating: int = Field(ge=1, le=5)
+    comment: str | None
+
+    shipment_id: UUID = Field(foreign_key="shipment.id")
+    shipment: Shipment = Relationship(
+        back_populates="review",
         sa_relationship_kwargs={"lazy": "selectin"},
     )

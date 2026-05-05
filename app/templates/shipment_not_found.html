@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,11 +18,13 @@
             --shadow-light: rgba(0, 0, 0, 0.08);
             --shadow-hover: rgba(74, 144, 226, 0.15);
         }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--background-light);
@@ -33,6 +36,7 @@
             min-height: 100vh;
             padding: 20px;
         }
+
         .error-container {
             max-width: 700px;
             width: 100%;
@@ -42,23 +46,28 @@
             overflow: hidden;
             text-align: center;
         }
+
         header {
             background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
             color: white;
             padding: 30px 40px;
         }
+
         .logo {
             font-size: 1.5em;
             font-weight: 700;
             margin-bottom: 10px;
         }
+
         .tagline {
             font-size: 0.9em;
             opacity: 0.9;
         }
+
         .error-content {
             padding: 50px 40px;
         }
+
         .error-code {
             font-size: 8em;
             font-weight: 700;
@@ -70,41 +79,51 @@
             margin-bottom: 20px;
             animation: fadeInScale 0.6s ease-out;
         }
+
         @keyframes fadeInScale {
             0% {
                 opacity: 0;
                 transform: scale(0.8);
             }
+
             100% {
                 opacity: 1;
                 transform: scale(1);
             }
         }
+
         h1 {
             font-size: 2em;
             color: var(--text-color);
             margin-bottom: 15px;
             font-weight: 600;
         }
+
         .error-message {
             color: var(--light-text-color);
             font-size: 1.1em;
             margin-bottom: 30px;
             line-height: 1.6;
         }
+
         .illustration {
             margin: 30px 0;
             font-size: 5em;
             animation: float 3s ease-in-out infinite;
         }
+
         @keyframes float {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: translateY(0px);
             }
+
             50% {
                 transform: translateY(-20px);
             }
         }
+
         .suggestions {
             background-color: var(--background-light);
             border: 1px solid var(--border-color);
@@ -113,22 +132,26 @@
             margin: 30px 0;
             text-align: left;
         }
+
         .suggestions h2 {
             font-size: 1.2em;
             color: var(--primary-color);
             margin-bottom: 15px;
             font-weight: 600;
         }
+
         .suggestions ul {
             list-style: none;
             padding: 0;
         }
+
         .suggestions li {
             padding: 8px 0;
             color: var(--light-text-color);
             position: relative;
             padding-left: 25px;
         }
+
         .suggestions li::before {
             content: "→";
             position: absolute;
@@ -136,6 +159,7 @@
             color: var(--primary-color);
             font-weight: bold;
         }
+
         .button-group {
             display: flex;
             gap: 15px;
@@ -143,6 +167,7 @@
             flex-wrap: wrap;
             margin-top: 30px;
         }
+
         .btn {
             display: inline-block;
             padding: 12px 30px;
@@ -154,25 +179,30 @@
             border: none;
             cursor: pointer;
         }
+
         .btn-primary {
             background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
             color: white;
             box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
         }
+
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
         }
+
         .btn-secondary {
             background-color: transparent;
             color: var(--primary-color);
             border: 2px solid var(--primary-color);
         }
+
         .btn-secondary:hover {
             background-color: var(--primary-color);
             color: white;
             transform: translateY(-2px);
         }
+
         footer {
             padding: 20px 40px;
             font-size: 0.85em;
@@ -180,12 +210,14 @@
             border-top: 1px solid var(--border-color);
             background-color: #f0f4f7;
         }
+
         .search-box {
             display: flex;
             gap: 10px;
             max-width: 500px;
             margin: 30px auto;
         }
+
         .search-input {
             flex: 1;
             padding: 12px 20px;
@@ -195,10 +227,12 @@
             font-family: 'Inter', sans-serif;
             transition: border-color 0.3s ease;
         }
+
         .search-input:focus {
             outline: none;
             border-color: var(--primary-color);
         }
+
         .search-btn {
             padding: 12px 25px;
             background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
@@ -209,37 +243,47 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
+
         .search-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
         }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .error-code {
                 font-size: 5em;
             }
+
             h1 {
                 font-size: 1.5em;
             }
+
             .error-message {
                 font-size: 1em;
             }
+
             .error-content {
                 padding: 30px 20px;
             }
+
             header {
                 padding: 20px;
             }
+
             .button-group {
                 flex-direction: column;
                 align-items: stretch;
             }
+
             .btn {
                 width: 100%;
             }
+
             .search-box {
                 flex-direction: column;
             }
+
             .search-input,
             .search-btn {
                 width: 100%;
@@ -247,24 +291,26 @@
         }
     </style>
 </head>
+
 <body>
-<div class="error-container">
-    <header>
-        <div class="logo">📦 FastShip</div>
-        <div class="tagline">Shipment Tracking System</div>
-    </header>
-    <div class="error-content">
-        <div class="error-code">404</div>
-        <h1>Oops! Page Not Found</h1>
-        <div class="illustration">📭</div>
-        <p class="error-message">
-            We couldn't find the page you're looking for. It seems like this shipment has been lost in transit!
-            The page may have been moved, deleted, or the URL might be incorrect.
-        </p>
+    <div class="error-container">
+        <header>
+            <div class="logo">📦 FastShip</div>
+            <div class="tagline">Shipment Tracking System</div>
+        </header>
+        <div class="error-content">
+            <div class="error-code">404</div>
+            <h1>Oops! Page Not Found</h1>
+            <div class="illustration">📭</div>
+            <p class="error-message">
+                We couldn't find the page you're looking for. It seems like this shipment has been lost in transit!
+                The page may have been moved, deleted, or the URL might be incorrect.
+            </p>
+        </div>
+        <footer>
+            © FastShip • Shipment Tracking System
+        </footer>
     </div>
-    <footer>
-        © FastShip • Shipment Tracking System
-    </footer>
-</div>
 </body>
+
 </html>

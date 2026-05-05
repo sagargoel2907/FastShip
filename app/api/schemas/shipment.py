@@ -7,6 +7,7 @@ from app.api.schemas.seller import SellerRead
 from app.api.schemas.shipment_event import ShipmentEventRead
 from app.database.models import ShipmentStatus
 
+
 class BaseShipment(BaseModel):
     content: str
     weight: float = Field(le=25)
@@ -16,8 +17,10 @@ class BaseShipment(BaseModel):
     client_contact_email: EmailStr
     client_contact_phone: str | None = Field(default=None)
 
+
 class ShipmentCreate(BaseShipment):
     pass
+
 
 class ShipmentRead(BaseShipment):
     id: UUID
@@ -25,8 +28,10 @@ class ShipmentRead(BaseShipment):
     estimated_delivery: datetime
     seller: SellerRead
 
+
 class ShipmentUpdate(BaseModel):
     status: ShipmentStatus | None = None
     estimated_delivery: datetime | None = None
     location: int | None = None
     description: str | None = None
+    verification_code: str | None = None

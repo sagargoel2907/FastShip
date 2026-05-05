@@ -4,10 +4,13 @@ from uuid import UUID
 from fastapi import HTTPException, status
 
 from app.api.schemas.shipment import ShipmentCreate, ShipmentUpdate
-from app.database.models import Seller, Shipment, ShipmentStatus
+from app.api.schemas.shipment_review import ShipmentReviewCreate
+from app.core.security import decode_url_safe_token
+from app.database.models import Seller, Shipment, ShipmentReview, ShipmentStatus
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database.redis import get_verification_code
 from app.services.delivery_partner import DeliveryPartnerService
 from app.services.shipment_event import ShipmentEventService
 
@@ -70,6 +73,13 @@ class ShipmentService(BaseService[Shipment]):
                 status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 detail="No shipment update provided",
             )
+        if shipment.status == ShipmentStatus.delivered:
+            code = await get_verification_code(db_shipment.id)
+            if shipment.verification_code != code:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"{type(code)} : {shipment.verification_code}",
+                )
 
         if len(shipment_data) > 1 or not shipment.estimated_delivery:
             await self.shipment_event_service.create(
@@ -100,3 +110,16 @@ class ShipmentService(BaseService[Shipment]):
         self,
     ) -> Sequence[Shipment]:
         return await self._get_all()
+
+    async def rate(self, review: ShipmentReviewCreate, token: str):
+        token_data = decode_url_safe_token(token)
+        if not token_data:
+            raise HTTPException(
+                detail="Invalid token", status_code=status.HTTP_400_BAD_REQUEST
+            )
+        shipment = await self.get(UUID(token_data["id"]))
+        if not shipment:
+            return
+        new_review = ShipmentReview(**review.model_dump(), shipment_id=shipment.id)
+        self.session.add(new_review)
+        await self.session.commit()
