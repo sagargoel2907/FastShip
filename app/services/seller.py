@@ -1,7 +1,6 @@
 from typing import Sequence
 from uuid import UUID
 
-from fastapi import BackgroundTasks
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,8 +12,8 @@ from app.services.user import UserService
 
 
 class SellerService(UserService[Seller]):
-    def __init__(self, session: AsyncSession, tasks: BackgroundTasks) -> None:
-        super().__init__(session, Seller, tasks)
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session, Seller)
 
     async def create(self, seller: SellerCreate) -> Seller:
         db_seller = await self._create_user(

@@ -1,20 +1,18 @@
 from random import randint
 
-from fastapi import BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import generate_url_safe_token
 from app.database.models import Shipment, ShipmentEvent, ShipmentStatus
 from app.database.redis import add_verification_code
 from app.services.base import BaseService
-from app.services.notification import NotificationService
 from app.config import app_settings
+from app.worker.task import send_email_with_template
 
 
 class ShipmentEventService(BaseService):
-    def __init__(self, session: AsyncSession, tasks: BackgroundTasks):
+    def __init__(self, session: AsyncSession):
         super().__init__(session, ShipmentEvent)
-        self.notification_service = NotificationService(tasks)
 
     async def create(
         self,
@@ -81,7 +79,7 @@ class ShipmentEventService(BaseService):
                 template_name = "out_for_delivery.html"
                 code = randint(100_000, 999_999)
                 context["verification_code"] = str(code)
-                await add_verification_code(shipment.id, code)
+                await add_verification_code(shipment.id, str(code))
 
             case ShipmentStatus.cancelled:
                 subject = "Order Cancelled"
@@ -95,7 +93,7 @@ class ShipmentEventService(BaseService):
                     f"http://{app_settings.APP_DOMAIN}/shipment/review?token={token}"
                 )
 
-        await self.notification_service.send_email_with_template(
+        send_email_with_template.delay(
             recipients=recepients,
             subject=subject,
             template_name=template_name,

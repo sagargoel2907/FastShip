@@ -25,6 +25,8 @@ class DatabaseSettings(BaseSettings):
             f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
+    def REDIS_URL(self, db):
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{db}"
 
 class SecuritySettings(BaseSettings):
     JWT_SECRET: str

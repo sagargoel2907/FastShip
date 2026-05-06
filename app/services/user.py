@@ -1,7 +1,7 @@
 from datetime import timedelta
 from uuid import UUID
 
-from fastapi import BackgroundTasks, HTTPException, status
+from fastapi import HTTPException, status
 from pydantic import EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,8 +17,8 @@ from app.services.base import BaseService
 from typing import TypeVar
 from passlib.context import CryptContext
 
-from app.services.notification import NotificationService
 from app.config import app_settings
+from app.worker.task import send_email_with_template
 
 password_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -27,10 +27,9 @@ UserT = TypeVar("UserT", Seller, DeliveryPartner)
 
 class UserService(BaseService[UserT]):
     def __init__(
-        self, session: AsyncSession, model: type[UserT], tasks: BackgroundTasks
+        self, session: AsyncSession, model: type[UserT]
     ):
         super().__init__(session, model)
-        self.notification_service = NotificationService(tasks=tasks)
 
     async def _get_user_by_email(self, email: EmailStr):
         user = await self.session.scalar(
@@ -65,7 +64,7 @@ class UserService(BaseService[UserT]):
         await self._create(user)
 
         token = generate_url_safe_token({"email": user.email, "id": str(user.id)})
-        await self.notification_service.send_email_with_template(
+        send_email_with_template.delay( # type: ignore
             recipients=[user.email],
             subject="Verify your email for FastShip",
             template_name="verify_email.html",
@@ -97,7 +96,7 @@ class UserService(BaseService[UserT]):
         token = generate_url_safe_token(
             {"email": user.email, "id": str(user.id)}, salt="forgot-password"
         )
-        await self.notification_service.send_email_with_template(
+        send_email_with_template.delay( # type: ignore
             recipients=[email],
             subject="FastShip Account Password reset",
             context={

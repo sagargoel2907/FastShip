@@ -1,7 +1,7 @@
 from typing import Sequence
 from uuid import UUID
 
-from fastapi import BackgroundTasks, HTTPException, status
+from fastapi import HTTPException, status
 from passlib.context import CryptContext
 from pydantic import EmailStr
 from sqlalchemy import any_, select
@@ -15,8 +15,8 @@ password_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 class DeliveryPartnerService(UserService[DeliveryPartner]):
-    def __init__(self, session: AsyncSession, tasks: BackgroundTasks) -> None:
-        super().__init__(session, DeliveryPartner, tasks)
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session, DeliveryPartner)
 
     async def create(self, delivery_partner: DeliveryPartnerCreate) -> DeliveryPartner:
         db_partner = await self._create_user(
