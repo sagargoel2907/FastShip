@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.api.schemas.shipment_review import ShipmentReviewCreate
 from app.config import TEMPLATES_FOLDER, app_settings
+from app.database.models import TagName
 
 from ..dependencies import (
     DeliveryPartnerDep,
@@ -100,6 +101,18 @@ async def review(
 ):
     await service.rate(review, token)
     return {"details": "Review submitted"}
+
+@router.post('/tag', response_model=ShipmentRead)
+async def add_tag(id: UUID, tag: TagName, service: ShipmentServiceDep):
+    return await service.add_tag(id, tag)
+
+@router.delete('/tag', response_model=ShipmentRead)
+async def remove_tag(id: UUID, tag: TagName, service: ShipmentServiceDep):
+    return await service.remove_tag(id, tag)
+
+@router.get('/tagged', response_model=list[ShipmentRead])
+async def get_shipment_by_tag(tag: TagName, service: ShipmentServiceDep):
+    return await service.get_shipment_by_tag(tag)
 
 @router.get("/{id}", response_model=ShipmentRead)
 async def get_shipment(

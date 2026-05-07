@@ -5,7 +5,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 from app.api.schemas.seller import SellerRead
 from app.api.schemas.shipment_event import ShipmentEventRead
-from app.database.models import ShipmentStatus
+from app.database.models import ShipmentStatus, TagName
 
 
 class BaseShipment(BaseModel):
@@ -21,12 +21,15 @@ class BaseShipment(BaseModel):
 class ShipmentCreate(BaseShipment):
     pass
 
-
+class TagRead(BaseModel):
+    name: TagName
+    description: str
 class ShipmentRead(BaseShipment):
     id: UUID
     timeline: list[ShipmentEventRead]
     estimated_delivery: datetime
     seller: SellerRead
+    tags: list[TagRead]
 
 
 class ShipmentUpdate(BaseModel):

@@ -6,7 +6,13 @@ from fastapi import HTTPException, status
 from app.api.schemas.shipment import ShipmentCreate, ShipmentUpdate
 from app.api.schemas.shipment_review import ShipmentReviewCreate
 from app.core.security import decode_url_safe_token
-from app.database.models import Seller, Shipment, ShipmentReview, ShipmentStatus
+from app.database.models import (
+    Seller,
+    Shipment,
+    ShipmentReview,
+    ShipmentStatus,
+    TagName,
+)
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -123,3 +129,56 @@ class ShipmentService(BaseService[Shipment]):
         new_review = ShipmentReview(**review.model_dump(), shipment_id=shipment.id)
         self.session.add(new_review)
         await self.session.commit()
+
+    async def add_tag(self, id: UUID, tag: TagName):
+        shipment = await self.get(id)
+        if not shipment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Shipment does not exists"
+            )
+
+        tag_obj = await tag.get_tag(self.session)
+        if not tag_obj:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Provided tag {tag.value} is invalid",
+            )
+        if tag_obj in shipment.tags:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Tag {tag.value} already exists on the shipment",
+            )
+        shipment.tags.append(tag_obj)
+        await self._update(shipment)
+        return shipment
+
+    async def remove_tag(self, id: UUID, tag: TagName):
+        shipment = await self.get(id)
+        if not shipment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Shipment does not exists"
+            )
+
+        tag_obj = await tag.get_tag(self.session)
+        if not tag_obj:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Provided tag {tag.value} is invalid",
+            )
+
+        try:
+            shipment.tags.remove(tag_obj)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Provided tag {tag.value} does not exist on the shipment",
+            )
+        await self._update(shipment)
+        return shipment
+
+    async def get_shipment_by_tag(self, tag: TagName):
+        tag_obj = await tag.get_tag(session=self.session)
+        if not tag_obj:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Invalid tag')
+        
+        return tag_obj.shipments
