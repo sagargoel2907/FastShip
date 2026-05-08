@@ -1,13 +1,13 @@
 from typing import Sequence
 from uuid import UUID
 
-from fastapi import HTTPException, status
 from passlib.context import CryptContext
 from pydantic import EmailStr
 from sqlalchemy import any_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas.delivery_partner import DeliveryPartnerCreate
+from app.core.exceptions import DeliveryPartnerNotAvailableException
 from app.database.models import DeliveryPartner, Shipment
 from app.services.user import UserService
 
@@ -53,7 +53,4 @@ class DeliveryPartnerService(UserService[DeliveryPartner]):
             if partner.current_handling_capacity > 0:
                 return partner
 
-        raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE,
-            detail="No delivery partner available!",
-        )
+        raise DeliveryPartnerNotAvailableException()

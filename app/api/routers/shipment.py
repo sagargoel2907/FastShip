@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Form, HTTPException, Request, status
+from fastapi import APIRouter, Form, Request
 from fastapi.templating import Jinja2Templates
 
 from app.api.schemas.shipment_review import ShipmentReviewCreate
@@ -40,10 +40,6 @@ async def update_shipment(
     delivery_partner: DeliveryPartnerDep,
 ):
     db_shipment = await service.update(shipment, id)
-    if not db_shipment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Shipment does not exists"
-        )
     return db_shipment
 
 
@@ -120,8 +116,4 @@ async def get_shipment(
     service: ShipmentServiceDep,
 ):
     shipment = await service.get(id)
-    if not shipment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Shipment does not exists"
-        )
     return shipment

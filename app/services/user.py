@@ -6,6 +6,7 @@ from pydantic import EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import EnitityNotFoundException, InvalidTokenException
 from app.core.security import (
     decode_url_safe_token,
     generate_jwt_access_token,
@@ -42,8 +43,7 @@ class UserService(BaseService[UserT]):
             select(self.model).where(self.model.email == email)
         )
         if not user or not password_context.verify(password, user.password_hash):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+            raise EnitityNotFoundException(
                 detail="Email or password is incorrect",
             )
 
@@ -78,14 +78,10 @@ class UserService(BaseService[UserT]):
     async def verify_user_email_with_token(self, token: str):
         token_data = decode_url_safe_token(token=token, expiry=timedelta(days=1))
         if not token_data:
-            raise HTTPException(
-                detail="Invalid token", status_code=status.HTTP_400_BAD_REQUEST
-            )
+            raise InvalidTokenException()
         user = await self._get(UUID(token_data["id"]))
         if not user:
-            raise HTTPException(
-                detail="Invalid token", status_code=status.HTTP_400_BAD_REQUEST
-            )
+            raise InvalidTokenException()
         user.email_verified = True
         await self._update(user)
 

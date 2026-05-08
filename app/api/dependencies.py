@@ -1,8 +1,9 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 
+from app.core.exceptions import EmailNotVerifiedException, EnitityNotFoundException, InvalidTokenException
 from app.database.models import Seller, DeliveryPartner
 from app.database.redis import is_jti_blacklisted
 from app.database.session import get_session
@@ -48,10 +49,7 @@ DeliveryPartnerServiceDep = Annotated[
 async def get_access_token_data(token: str):
     data = decode_jwt_access_token(token)
     if not data or await is_jti_blacklisted(data["jti"]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired JWT Token",
-        )
+        raise InvalidTokenException(detail='Invalid or expired token')
     return data
 
 
@@ -70,15 +68,9 @@ async def get_current_seller(
 ):
     seller = await session.get(Seller, UUID(data["user"]["id"]))
     if not seller:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not Authorized",
-        )
+        raise EnitityNotFoundException()
     if not seller.email_verified:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email not verified",
-        )
+        raise EmailNotVerifiedException()
     return seller
 
 
@@ -87,15 +79,9 @@ async def get_current_delivery_partner(
 ):
     delivery_partner = await session.get(DeliveryPartner, UUID(data["user"]["id"]))
     if not delivery_partner:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not Authorized",
-        )
+        raise EnitityNotFoundException()
     if not delivery_partner.email_verified:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email not verified",
-        )
+        raise EmailNotVerifiedException()
     return delivery_partner
 
 
