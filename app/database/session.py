@@ -4,7 +4,7 @@ from sqlmodel import SQLModel
 from app.config import db_settings
 
 engine = create_async_engine(
-    url=db_settings.POSTGRES_URL, echo=True
+    url=db_settings.POSTGRES_URL, echo=False
 )
 
 async def create_db_and_tables():

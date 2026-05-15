@@ -86,4 +86,4 @@ def add_exception_handlers(app: FastAPI):
     for subclass in FastShipException.__subclasses__():
         app.add_exception_handler(subclass, exception_handler)
 
-    app.add_exception_handler(ResponseValidationError, response_validation_error_handler)
+    # app.add_exception_handler(ResponseValidationError, response_validation_error_handler)

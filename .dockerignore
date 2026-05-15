@@ -1,0 +1,9 @@
+.mypy_cache/
+.pytest_cache/
+alembic.ini
+migrations/
+.venv/
+venv/
+.env/
+*.db
+__pycache__/

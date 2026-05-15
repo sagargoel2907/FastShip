@@ -3,3 +3,6 @@ venv
 *.db
 __pycache__/
 .env
+dev.env
+redis_data/
+pg_data/

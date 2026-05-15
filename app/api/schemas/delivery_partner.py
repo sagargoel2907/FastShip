@@ -3,11 +3,12 @@ from uuid import UUID
 from pydantic import BaseModel, Field, EmailStr
 
 from app.api.schemas.shipment import ShipmentRead
+from app.database.models import Location
 
 class BaseDeliveryPartner(BaseModel):
     name: str = Field(max_length=20)
     email: EmailStr
-    serviceable_zip_codes: list[int]
+    serviceable_locations: list[Location]
     max_handling_capacity: int
 
 class DeliveryPartnerRead(BaseDeliveryPartner):
