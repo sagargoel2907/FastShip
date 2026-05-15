@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas.delivery_partner import DeliveryPartnerCreate
 from app.core.exceptions import DeliveryPartnerNotAvailableException
-from app.database.models import DeliveryPartner, Shipment
+from app.database.models import DeliveryPartner, Location, Shipment
 from app.services.user import UserService
 
 password_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -20,9 +20,14 @@ class DeliveryPartnerService(UserService[DeliveryPartner]):
 
     async def create(self, delivery_partner: DeliveryPartnerCreate) -> DeliveryPartner:
         db_partner = await self._create_user(
-            delivery_partner.model_dump(),
-            router_prefix='delivery-partner'
+            delivery_partner.model_dump(), router_prefix="delivery-partner"
         )
+        for zip_code in delivery_partner.serviceable_zip_codes:
+            location = await self.session.get(Location, zip_code)
+            db_partner.serviceable_locations.append(
+                location if location else Location(zip_code=zip_code)
+            )
+            await self.update(db_partner)
         return db_partner
 
     async def get(self, id: UUID) -> DeliveryPartner | None:
@@ -41,14 +46,16 @@ class DeliveryPartnerService(UserService[DeliveryPartner]):
         self, zipcode: int
     ) -> Sequence[DeliveryPartner]:
         result = await self.session.scalars(
-            select(DeliveryPartner).where(
-                any_(DeliveryPartner.serviceable_zip_codes) == zipcode
-            )
+            select(DeliveryPartner)
+            .join(DeliveryPartner.serviceable_locations)
+            .where(Location.zip_code == zipcode)
         )
         return result.all()
 
     async def assign_shipment(self, shipment: Shipment):
-        eligible_partners = await self.get_available_partner_for_zipcode(shipment.zipcode)
+        eligible_partners = await self.get_available_partner_for_zipcode(
+            shipment.zipcode
+        )
         for partner in eligible_partners:
             if partner.current_handling_capacity > 0:
                 return partner

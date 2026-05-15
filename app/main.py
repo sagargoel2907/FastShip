@@ -28,7 +28,7 @@ app = FastAPI(
     version="0.1.0",
     contact={"name": "Sagar Goel", "email": "sagargoel2907@gmail.com"},
     docs_url=None,
-    redoc_url=None
+    redoc_url=None,
 )
 
 app.include_router(router=master_router)

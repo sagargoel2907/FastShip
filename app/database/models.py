@@ -5,8 +5,8 @@ from sqlmodel import Relationship, SQLModel, Field, Column, select
 from pydantic import EmailStr
 from uuid import UUID, uuid4
 from sqlalchemy.dialects import postgresql
-from sqlalchemy import ARRAY, INTEGER
 from sqlalchemy.ext.asyncio import AsyncSession
+
 
 class ShipmentStatus(str, Enum):
     placed = "placed"
@@ -36,6 +36,7 @@ class TagName(str, Enum):
 
     async def get_tag(self, session: AsyncSession):
         return await session.scalar(select(Tag).where(Tag.name == self.value))
+
 
 class ShipmentTag(SQLModel, table=True):
     shipment_id: UUID = Field(foreign_key="shipment.id", primary_key=True)
@@ -160,6 +161,14 @@ class Seller(User, table=True):
     )
 
 
+class ServiceableLocation(SQLModel, table=True):
+    __tablename__ = "serviceable_location"  # type: ignore
+    delivery_partner_id: UUID = Field(
+        foreign_key="delivery_partner.id", primary_key=True
+    )
+    location_id: int = Field(foreign_key="location.zip_code", primary_key=True)
+
+
 class DeliveryPartner(User, table=True):
     __tablename__ = "delivery_partner"  # type: ignore
     id: UUID = Field(
@@ -176,8 +185,10 @@ class DeliveryPartner(User, table=True):
         )
     )
 
-    serviceable_zip_codes: list[int] = Field(
-        sa_column=Column(ARRAY(INTEGER)),
+    serviceable_locations: list["Location"] = Relationship(
+        back_populates="delivery_partners",
+        sa_relationship_kwargs={"lazy": "selectin"},
+        link_model=ServiceableLocation,
     )
     max_handling_capacity: int
 
@@ -197,6 +208,16 @@ class DeliveryPartner(User, table=True):
     @property
     def current_handling_capacity(self):
         return self.max_handling_capacity - len(self.active_shipments)
+
+
+class Location(SQLModel, table=True):
+    __tablename__ = "location" # type: ignore
+    zip_code: int = Field(primary_key=True)
+    delivery_partners: list[DeliveryPartner] = Relationship(
+        back_populates="serviceable_locations",
+        sa_relationship_kwargs={"lazy": "selectin"},
+        link_model=ServiceableLocation,
+    )
 
 
 class ShipmentEvent(SQLModel, table=True):
